@@ -1,0 +1,3173 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>3D Obstacle Adventure</title>
+
+<style>
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    overflow: hidden;
+    background: #101827;
+    font-family: Arial, sans-serif;
+}
+
+canvas {
+    display: block;
+}
+
+/* =========================
+   HUD
+========================= */
+
+#hud {
+
+    position: fixed;
+
+    top: 14px;
+    left: 14px;
+
+    z-index: 10;
+
+    color: white;
+
+    background: rgba(10,18,32,0.88);
+
+    padding: 14px 18px;
+
+    border-radius: 14px;
+
+    line-height: 1.8;
+
+    font-size: 16px;
+
+    min-width: 195px;
+
+    backdrop-filter: blur(5px);
+}
+
+#hearts {
+
+    font-size: 24px;
+
+    letter-spacing: 3px;
+}
+
+#timer {
+
+    color: #ffe66d;
+
+    font-weight: bold;
+}
+
+#progress {
+
+    width: 180px;
+
+    height: 7px;
+
+    background: #444;
+
+    border-radius: 10px;
+
+    overflow: hidden;
+}
+
+#progressBar {
+
+    width: 0%;
+
+    height: 100%;
+
+    background: #00e676;
+}
+
+/* =========================
+   MENU
+========================= */
+
+#message {
+
+    display: none;
+
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 20;
+
+    background: rgba(0,0,0,0.7);
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 20px;
+}
+
+.panel {
+
+    width: min(450px, 100%);
+
+    padding: 32px;
+
+    text-align: center;
+
+    color: white;
+
+    background: #142238;
+
+    border: 2px solid #3f83f8;
+
+    border-radius: 20px;
+
+    box-shadow: 0 10px 50px rgba(0,0,0,0.6);
+}
+
+.panel h1 {
+
+    font-size: 32px;
+
+    margin-bottom: 15px;
+}
+
+.panel p {
+
+    line-height: 1.6;
+
+    margin-bottom: 22px;
+}
+
+button {
+
+    border: none;
+
+    border-radius: 10px;
+
+    background: #00d9ff;
+
+    color: #071321;
+
+    padding: 13px 22px;
+
+    font-size: 17px;
+
+    font-weight: bold;
+
+    cursor: pointer;
+}
+
+button:hover {
+
+    background: #72edff;
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+#controls {
+
+    position: fixed;
+
+    bottom: 18px;
+    left: 18px;
+
+    z-index: 10;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(3,58px);
+
+    gap: 7px;
+}
+
+.ctrl {
+
+    width: 58px;
+    height: 58px;
+
+    border-radius: 14px;
+
+    color: white;
+
+    background:
+        rgba(10,18,32,0.75);
+
+    border:
+        1px solid
+        rgba(255,255,255,0.5);
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    font-size: 23px;
+
+    user-select: none;
+
+    touch-action: none;
+}
+
+.ctrl:active {
+
+    background: #0879c9;
+}
+
+#jump {
+
+    position: fixed;
+
+    bottom: 35px;
+
+    right: 25px;
+
+    width: 78px;
+    height: 78px;
+
+    border-radius: 50%;
+
+    z-index: 10;
+}
+
+#help {
+
+    position: fixed;
+
+    bottom: 12px;
+
+    right: 15px;
+
+    color: white;
+
+    font-size: 12px;
+
+    text-shadow:
+        0 1px 3px black;
+}
+
+@media(max-width:600px) {
+
+    #hud {
+
+        font-size: 13px;
+
+        padding: 9px 12px;
+    }
+
+    #hearts {
+
+        font-size: 19px;
+    }
+
+    #progress {
+
+        width: 140px;
+    }
+
+    .panel h1 {
+
+        font-size: 25px;
+    }
+
+    #help {
+
+        display: none;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+
+<!-- =========================
+     HUD
+========================= -->
+
+<div id="hud">
+
+    <div>
+        🏁 Level:
+        <b id="level">1</b>/10
+    </div>
+
+    <div id="hearts">
+        ❤️❤️❤️
+    </div>
+
+    <div>
+        ⏱️ Waktu:
+        <span id="timer">60</span>
+        detik
+    </div>
+
+    <div>
+        📏 Kemajuan:
+        <span id="percent">0</span>%
+    </div>
+
+    <div id="progress">
+
+        <div id="progressBar"></div>
+
+    </div>
+
+</div>
+
+
+<!-- =========================
+     MESSAGE
+========================= -->
+
+<div id="message">
+
+    <div class="panel">
+
+        <h1 id="msgTitle">
+            3D OBSTACLE ADVENTURE
+        </h1>
+
+        <p id="msgText">
+            Lewati rintangan dan tetap berada
+            di dalam jalur!
+        </p>
+
+        <button
+            id="mainButton"
+            onclick="startGame()"
+        >
+            Mulai Bermain
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- =========================
+     CONTROL
+========================= -->
+
+<div id="controls">
+
+    <div
+        class="ctrl"
+        id="up"
+    >
+        ⬆️
+    </div>
+
+    <div
+        class="ctrl"
+        id="left"
+    >
+        ⬅️
+    </div>
+
+    <div
+        class="ctrl"
+        id="right"
+    >
+        ➡️
+    </div>
+
+</div>
+
+
+<div
+    class="ctrl"
+    id="jump"
+>
+    🦘
+</div>
+
+
+<div id="help">
+
+    WASD / Arrow =
+    Bergerak |
+
+    Spasi =
+    Lompat
+
+</div>
+
+
+<!-- =========================
+     THREE JS
+========================= -->
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+
+<script>
+
+/* =========================================================
+   VARIABEL
+========================================================= */
+
+let scene;
+
+let camera;
+
+let renderer;
+
+let player;
+
+let levelGroup;
+
+let ground;
+
+let dangerLeft;
+
+let dangerRight;
+
+let finish;
+
+let obstacles = [];
+
+let keys = {};
+
+let level = 1;
+
+let hearts = 3;
+
+let timeLeft = 60;
+
+let running = false;
+
+let started = false;
+
+let jumping = false;
+
+let velocityY = 0;
+
+let levelStart = 0;
+
+let hitCooldown = 0;
+
+let finishZ = -100;
+
+let arms = [];
+
+let legs = [];
+
+let clock =
+    new THREE.Clock();
+
+
+/* =========================================================
+   PENGATURAN
+========================================================= */
+
+const PLAYER_SPEED = 9;
+
+
+/*
+   Lompatan cepat
+*/
+
+const JUMP_POWER = 16;
+
+const GRAVITY = 38;
+
+
+/*
+   Lebar jalur.
+   Semua rintangan akan dibuat
+   berdasarkan ukuran jalur ini.
+*/
+
+const ROAD_WIDTH = 10;
+
+
+/*
+   Lebar zona bahaya
+*/
+
+const DANGER_WIDTH = 7;
+
+
+/* =========================================================
+   SCENE
+========================================================= */
+
+scene =
+    new THREE.Scene();
+
+
+scene.background =
+    new THREE.Color(
+        0x8bd8ff
+    );
+
+
+scene.fog =
+    new THREE.Fog(
+        0x8bd8ff,
+        45,
+        180
+    );
+
+
+/* =========================================================
+   CAMERA
+========================================================= */
+
+camera =
+    new THREE.PerspectiveCamera(
+
+        65,
+
+        window.innerWidth /
+        window.innerHeight,
+
+        0.1,
+
+        500
+    );
+
+
+camera.position.set(
+    0,
+    6,
+    12
+);
+
+
+/* =========================================================
+   RENDERER
+========================================================= */
+
+renderer =
+    new THREE.WebGLRenderer({
+
+        antialias: true
+    });
+
+
+renderer.setSize(
+
+    window.innerWidth,
+
+    window.innerHeight
+);
+
+
+renderer.setPixelRatio(
+
+    Math.min(
+
+        window.devicePixelRatio,
+
+        2
+    )
+);
+
+
+renderer.shadowMap.enabled =
+    true;
+
+
+renderer.shadowMap.type =
+    THREE.PCFSoftShadowMap;
+
+
+renderer.outputColorSpace =
+    THREE.SRGBColorSpace;
+
+
+document.body.appendChild(
+    renderer.domElement
+);
+
+
+/* =========================================================
+   LIGHT
+========================================================= */
+
+const hemisphere =
+    new THREE.HemisphereLight(
+
+        0xffffff,
+
+        0x456044,
+
+        2
+    );
+
+
+scene.add(
+    hemisphere
+);
+
+
+const sun =
+    new THREE.DirectionalLight(
+
+        0xffffff,
+
+        2.5
+    );
+
+
+sun.position.set(
+
+    -15,
+    35,
+    15
+);
+
+
+sun.castShadow = true;
+
+
+sun.shadow.mapSize.set(
+
+    2048,
+    2048
+);
+
+
+scene.add(
+    sun
+);
+
+
+/* =========================================================
+   MATERIAL
+========================================================= */
+
+function makeMaterial(
+    color,
+    options = {}
+) {
+
+    return new THREE.MeshStandardMaterial({
+
+        color,
+
+        roughness: 0.75,
+
+        ...options
+    });
+}
+
+
+/* =========================================================
+   LIMB
+========================================================= */
+
+function makeLimb(
+    color,
+    length,
+    width
+) {
+
+    const pivot =
+        new THREE.Group();
+
+
+    const mesh =
+        new THREE.Mesh(
+
+            new THREE.BoxGeometry(
+
+                width,
+
+                length,
+
+                width
+            ),
+
+            makeMaterial(color)
+        );
+
+
+    mesh.position.y =
+        -length / 2;
+
+
+    mesh.castShadow = true;
+
+
+    pivot.add(mesh);
+
+
+    return pivot;
+}
+
+
+/* =========================================================
+   PLAYER
+========================================================= */
+
+function createPlayer() {
+
+    const group =
+        new THREE.Group();
+
+
+    /*
+        Karakter menghadap
+        ke arah rintangan.
+    */
+
+    group.rotation.y =
+        Math.PI;
+
+
+    /* BADAN */
+
+    const body =
+        new THREE.Mesh(
+
+            new THREE.BoxGeometry(
+
+                1.1,
+
+                1.4,
+
+                0.65
+            ),
+
+            makeMaterial(
+                0x168cff
+            )
+        );
+
+
+    body.position.y =
+        1.75;
+
+
+    body.castShadow =
+        true;
+
+
+    group.add(body);
+
+
+    /* KEPALA */
+
+    const head =
+        new THREE.Mesh(
+
+            new THREE.SphereGeometry(
+
+                0.42,
+
+                20,
+
+                16
+            ),
+
+            makeMaterial(
+                0xffc99b
+            )
+        );
+
+
+    head.position.y =
+        2.8;
+
+
+    head.castShadow =
+        true;
+
+
+    group.add(head);
+
+
+    /* RAMBUT */
+
+    const hair =
+        new THREE.Mesh(
+
+            new THREE.SphereGeometry(
+
+                0.43,
+
+                16,
+
+                10,
+
+                0,
+
+                Math.PI * 2,
+
+                0,
+
+                Math.PI / 2
+            ),
+
+            makeMaterial(
+                0x35251b
+            )
+        );
+
+
+    hair.position.y =
+        2.97;
+
+
+    group.add(hair);
+
+
+    /* MATA */
+
+    const eyeMaterial =
+        makeMaterial(
+            0x111111
+        );
+
+
+    for(
+        const x of [-0.14,0.14]
+    ) {
+
+        const eye =
+            new THREE.Mesh(
+
+                new THREE.SphereGeometry(
+
+                    0.045,
+
+                    8,
+
+                    8
+                ),
+
+                eyeMaterial
+            );
+
+
+        eye.position.set(
+
+            x,
+
+            2.82,
+
+            -0.37
+        );
+
+
+        group.add(eye);
+    }
+
+
+    /* HIDUNG */
+
+    const nose =
+        new THREE.Mesh(
+
+            new THREE.SphereGeometry(
+
+                0.07,
+
+                8,
+
+                8
+            ),
+
+            makeMaterial(
+                0xffaa77
+            )
+        );
+
+
+    nose.position.set(
+
+        0,
+
+        2.77,
+
+        -0.40
+    );
+
+
+    group.add(nose);
+
+
+    /* TANGAN */
+
+    arms = [];
+
+
+    for(
+        const x of [-0.72,0.72]
+    ) {
+
+        const arm =
+            makeLimb(
+
+                0xffc99b,
+
+                0.95,
+
+                0.28
+            );
+
+
+        arm.position.set(
+
+            x,
+
+            2.25,
+
+            0
+        );
+
+
+        group.add(arm);
+
+        arms.push(arm);
+    }
+
+
+    /* KAKI */
+
+    legs = [];
+
+
+    for(
+        const x of [-0.3,0.3]
+    ) {
+
+        const leg =
+            makeLimb(
+
+                0x202a44,
+
+                0.85,
+
+                0.35
+            );
+
+
+        leg.position.set(
+
+            x,
+
+            1.05,
+
+            0
+        );
+
+
+        group.add(leg);
+
+        legs.push(leg);
+
+
+        /* SEPATU */
+
+        const shoe =
+            new THREE.Mesh(
+
+                new THREE.BoxGeometry(
+
+                    0.4,
+
+                    0.22,
+
+                    0.58
+                ),
+
+                makeMaterial(
+                    0xffffff
+                )
+            );
+
+
+        shoe.position.set(
+
+            x,
+
+            0.12,
+
+            -0.10
+        );
+
+
+        group.add(shoe);
+    }
+
+
+    scene.add(group);
+
+
+    return group;
+}
+
+
+/* =========================================================
+   MEMBUAT ZONA BAHAYA
+========================================================= */
+
+function createDangerZone() {
+
+    const length =
+        Math.abs(finishZ) + 60;
+
+
+    /*
+        Zona bahaya kiri
+    */
+
+    dangerLeft =
+        new THREE.Mesh(
+
+            new THREE.BoxGeometry(
+
+                DANGER_WIDTH,
+
+                0.12,
+
+                length
+            ),
+
+            makeMaterial(
+
+                0xff1a1a,
+
+                {
+                    emissive: 0x550000,
+
+                    emissiveIntensity: 0.8
+                }
+            )
+        );
+
+
+    dangerLeft.position.set(
+
+        -(ROAD_WIDTH / 2) -
+        (DANGER_WIDTH / 2),
+
+        0.02,
+
+        finishZ / 2
+    );
+
+
+    dangerLeft.receiveShadow =
+        true;
+
+
+    levelGroup.add(
+        dangerLeft
+    );
+
+
+    /*
+        Zona bahaya kanan
+    */
+
+    dangerRight =
+        new THREE.Mesh(
+
+            new THREE.BoxGeometry(
+
+                DANGER_WIDTH,
+
+                0.12,
+
+                length
+            ),
+
+            makeMaterial(
+
+                0xff1a1a,
+
+                {
+                    emissive: 0x550000,
+
+                    emissiveIntensity: 0.8
+                }
+            )
+        );
+
+
+    dangerRight.position.set(
+
+        (ROAD_WIDTH / 2) +
+        (DANGER_WIDTH / 2),
+
+        0.02,
+
+        finishZ / 2
+    );
+
+
+    dangerRight.receiveShadow =
+        true;
+
+
+    levelGroup.add(
+        dangerRight
+    );
+
+
+    /*
+        Garis pembatas
+        antara jalan dan zona merah.
+    */
+
+    const lineMaterial =
+        makeMaterial(
+            0xffffff
+        );
+
+
+    const leftLine =
+        new THREE.Mesh(
+
+            new THREE.BoxGeometry(
+
+                0.18,
+
+                0.1,
+
+                length
+            ),
+
+            lineMaterial
+        );
+
+
+    leftLine.position.set(
+
+        -ROAD_WIDTH / 2,
+
+        0.08,
+
+        finishZ / 2
+    );
+
+
+    levelGroup.add(
+        leftLine
+    );
+
+
+    const rightLine =
+        new THREE.Mesh(
+
+            new THREE.BoxGeometry(
+
+                0.18,
+
+                0.1,
+
+                length
+            ),
+
+            lineMaterial
+        );
+
+
+    rightLine.position.set(
+
+        ROAD_WIDTH / 2,
+
+        0.08,
+
+        finishZ / 2
+    );
+
+
+    levelGroup.add(
+        rightLine
+    );
+}
+
+
+/* =========================================================
+   JALUR
+========================================================= */
+
+function createGround() {
+
+    const length =
+        Math.abs(finishZ) + 60;
+
+
+    /*
+        Jalan dibuat tepat
+        selebar ROAD_WIDTH.
+    */
+
+    ground =
+        new THREE.Mesh(
+
+            new THREE.BoxGeometry(
+
+                ROAD_WIDTH,
+
+                1,
+
+                length
+            ),
+
+            makeMaterial(
+                0x555b65
+            )
+        );
+
+
+    ground.position.set(
+
+        0,
+
+        -0.5,
+
+        finishZ / 2
+    );
+
+
+    ground.receiveShadow =
+        true;
+
+
+    levelGroup.add(
+        ground
+    );
+
+
+    /*
+        Garis tengah jalan
+    */
+
+    for(
+        let z = -5;
+
+        z > finishZ;
+
+        z -= 10
+    ) {
+
+        const line =
+            new THREE.Mesh(
+
+                new THREE.BoxGeometry(
+
+                    0.12,
+
+                    0.05,
+
+                    3
+                ),
+
+                makeMaterial(
+                    0xffffff
+                )
+            );
+
+
+        line.position.set(
+
+            0,
+
+            0.06,
+
+            z
+        );
+
+
+        levelGroup.add(
+            line
+        );
+    }
+
+
+    createDangerZone();
+}
+
+
+/* =========================================================
+   RINTANGAN
+========================================================= */
+
+function createObstacle(
+
+    x,
+
+    z,
+
+    width,
+
+    height,
+
+    depth,
+
+    type
+
+) {
+
+    const colors = {
+
+        normal: 0xf44336,
+
+        moving: 0xff9800,
+
+        wall: 0x9c27b0,
+
+        low: 0xffd600,
+
+        spinner: 0x00bcd4
+    };
+
+
+    const obstacle =
+        new THREE.Group();
+
+
+    const mesh =
+        new THREE.Mesh(
+
+            new THREE.BoxGeometry(
+
+                width,
+
+                height,
+
+                depth
+            ),
+
+            makeMaterial(
+
+                colors[type]
+                || 0xf44336
+            )
+        );
+
+
+    mesh.position.y =
+        height / 2;
+
+
+    mesh.castShadow =
+        true;
+
+
+    mesh.receiveShadow =
+        true;
+
+
+    obstacle.add(mesh);
+
+
+    obstacle.position.set(
+
+        x,
+
+        0,
+
+        z
+    );
+
+
+    obstacle.userData = {
+
+        type,
+
+        baseX: x,
+
+        phase:
+            Math.random() *
+            Math.PI *
+            2,
+
+        hit: false
+    };
+
+
+    levelGroup.add(
+        obstacle
+    );
+
+
+    obstacles.push(
+        obstacle
+    );
+}
+
+
+/* =========================================================
+   FINISH
+========================================================= */
+
+function createFinish() {
+
+    const gate =
+        new THREE.Group();
+
+
+    const poleMaterial =
+        makeMaterial(
+            0xffffff
+        );
+
+
+    const flagMaterial =
+        makeMaterial(
+
+            0x00e676,
+
+            {
+                emissive: 0x003d19
+            }
+        );
+
+
+    for(
+        const x of [-4.7,4.7]
+    ) {
+
+        const pole =
+            new THREE.Mesh(
+
+                new THREE.BoxGeometry(
+
+                    0.35,
+
+                    5,
+
+                    0.35
+                ),
+
+                poleMaterial
+            );
+
+
+        pole.position.set(
+
+            x,
+
+            2.5,
+
+            0
+        );
+
+
+        gate.add(pole);
+    }
+
+
+    const top =
+        new THREE.Mesh(
+
+            new THREE.BoxGeometry(
+
+                9.7,
+
+                0.4,
+
+                0.4
+            ),
+
+            poleMaterial
+        );
+
+
+    top.position.y =
+        5;
+
+
+    gate.add(top);
+
+
+    const banner =
+        new THREE.Mesh(
+
+            new THREE.BoxGeometry(
+
+                5,
+
+                1.4,
+
+                0.25
+            ),
+
+            flagMaterial
+        );
+
+
+    banner.position.set(
+
+        0,
+
+        4.1,
+
+        0
+    );
+
+
+    gate.add(banner);
+
+
+    gate.position.z =
+        finishZ;
+
+
+    levelGroup.add(
+        gate
+    );
+
+
+    finish =
+        new THREE.Mesh(
+
+            new THREE.BoxGeometry(
+
+                ROAD_WIDTH,
+
+                0.15,
+
+                4
+            ),
+
+            makeMaterial(
+
+                0x00ff77,
+
+                {
+                    emissive:
+                        0x004422
+                }
+            )
+        );
+
+
+    finish.position.set(
+
+        0,
+
+        0.1,
+
+        finishZ
+    );
+
+
+    levelGroup.add(
+        finish
+    );
+}
+
+
+/* =========================================================
+   GENERATE LEVEL
+========================================================= */
+
+function generateLevel() {
+
+    if(levelGroup) {
+
+        scene.remove(
+            levelGroup
+        );
+    }
+
+
+    levelGroup =
+        new THREE.Group();
+
+
+    scene.add(
+        levelGroup
+    );
+
+
+    obstacles = [];
+
+
+    /*
+        Semakin tinggi level,
+        semakin panjang jalur.
+    */
+
+    const obstacleCount =
+        6 + level * 2;
+
+
+    finishZ =
+        -(obstacleCount * 8 + 20);
+
+
+    createGround();
+
+
+    /*
+        Ukuran jalur sekarang
+        menjadi dasar penempatan
+        semua rintangan.
+    */
+
+    const lanes = [
+
+        -3,
+
+        0,
+
+        3
+
+    ];
+
+
+    for(
+        let i = 0;
+
+        i < obstacleCount;
+
+        i++
+    ) {
+
+        const z =
+            -12 -
+            i * 8;
+
+
+        let x =
+            lanes[
+                Math.floor(
+                    Math.random() *
+                    lanes.length
+                )
+            ];
+
+
+        let type =
+            "normal";
+
+
+        let width =
+            2.2;
+
+
+        let height =
+            1.6;
+
+
+        let depth =
+            1.5;
+
+
+        /* =========================
+           LEVEL 2
+        ========================= */
+
+        if(
+
+            level >= 2 &&
+
+            i % 4 === 0
+
+        ) {
+
+            type =
+                "low";
+
+            width =
+                4;
+
+            height =
+                0.7;
+
+            depth =
+                1.3;
+        }
+
+
+        /* =========================
+           LEVEL 3
+        ========================= */
+
+        if(
+
+            level >= 3 &&
+
+            i % 3 === 0
+
+        ) {
+
+            type =
+                "moving";
+
+            width =
+                2.5;
+
+            height =
+                2;
+        }
+
+
+        /* =========================
+           LEVEL 4
+        ========================= */
+
+        if(
+
+            level >= 4 &&
+
+            i % 5 === 0
+
+        ) {
+
+            type =
+                "wall";
+
+            width =
+                5.5;
+
+            height =
+                2.8;
+
+            x = 0;
+        }
+
+
+        /* =========================
+           LEVEL 5
+        ========================= */
+
+        if(
+
+            level >= 5 &&
+
+            i % 3 === 1
+
+        ) {
+
+            type =
+                "moving";
+
+            width =
+                3;
+
+            height =
+                2.4;
+        }
+
+
+        /* =========================
+           LEVEL 6
+        ========================= */
+
+        if(
+
+            level >= 6 &&
+
+            i % 4 === 2
+
+        ) {
+
+            type =
+                "wall";
+
+            width =
+                6.5;
+
+            height =
+                3.2;
+
+            x = 0;
+        }
+
+
+        /* =========================
+           LEVEL 7
+        ========================= */
+
+        if(
+
+            level >= 7 &&
+
+            i % 3 === 0
+
+        ) {
+
+            type =
+                "spinner";
+
+            width =
+                4;
+
+            height =
+                1.2;
+        }
+
+
+        /* =========================
+           LEVEL 8
+        ========================= */
+
+        if(
+
+            level >= 8 &&
+
+            i % 4 === 1
+
+        ) {
+
+            type =
+                "moving";
+
+            width =
+                4;
+
+            height =
+                2.7;
+        }
+
+
+        /* =========================
+           LEVEL 9
+        ========================= */
+
+        if(
+
+            level >= 9 &&
+
+            i % 3 === 1
+
+        ) {
+
+            type =
+                "wall";
+
+            width =
+                7.5;
+
+            height =
+                3.5;
+
+            x = 0;
+        }
+
+
+        /* =========================
+           LEVEL 10
+        ========================= */
+
+        if(level === 10) {
+
+            if(
+                i % 4 === 0
+            ) {
+
+                type =
+                    "wall";
+
+                width =
+                    8;
+
+                height =
+                    3.7;
+
+                x = 0;
+
+            }
+
+            else if(
+                i % 4 === 1
+            ) {
+
+                type =
+                    "moving";
+
+                width =
+                    4;
+
+                height =
+                    3;
+
+            }
+
+            else if(
+                i % 4 === 2
+            ) {
+
+                type =
+                    "low";
+
+                width =
+                    5;
+
+                height =
+                    0.8;
+
+            }
+
+            else {
+
+                type =
+                    "spinner";
+
+                width =
+                    4.5;
+
+                height =
+                    1.4;
+            }
+        }
+
+
+        /*
+            Pastikan rintangan
+            tetap berada di dalam
+            jalur.
+        */
+
+        const maxX =
+            ROAD_WIDTH / 2 -
+            width / 2 -
+            0.2;
+
+
+        x =
+            THREE.MathUtils.clamp(
+                x,
+                -maxX,
+                maxX
+            );
+
+
+        createObstacle(
+
+            x,
+
+            z,
+
+            width,
+
+            height,
+
+            depth,
+
+            type
+        );
+    }
+
+
+    createFinish();
+
+
+    player.position.set(
+
+        0,
+
+        0,
+
+        5
+    );
+
+
+    velocityY =
+        0;
+
+
+    jumping =
+        false;
+
+
+    hitCooldown =
+        0;
+
+
+    timeLeft =
+        60;
+
+
+    levelStart =
+        performance.now();
+
+
+    updateHUD();
+}
+
+
+/* =========================================================
+   COLLISION
+========================================================= */
+
+function intersects(
+    a,
+    b
+) {
+
+    const boxA =
+        new THREE.Box3()
+            .setFromObject(a);
+
+
+    const boxB =
+        new THREE.Box3()
+            .setFromObject(b);
+
+
+    return boxA.intersectsBox(
+        boxB
+    );
+}
+
+
+/* =========================================================
+   CEK ZONA BAHAYA
+========================================================= */
+
+function checkDangerZone() {
+
+    if(!running)
+        return;
+
+
+    /*
+        Lebar karakter
+        diperhitungkan agar
+        tidak bisa berjalan
+        terlalu dekat dengan
+        pinggir.
+    */
+
+    const playerHalfWidth =
+        0.55;
+
+
+    const safeLeft =
+        -ROAD_WIDTH / 2 +
+        playerHalfWidth;
+
+
+    const safeRight =
+        ROAD_WIDTH / 2 -
+        playerHalfWidth;
+
+
+    /*
+        Jika karakter keluar
+        dari batas jalan,
+        langsung mati.
+    */
+
+    if(
+
+        player.position.x <
+        safeLeft ||
+
+        player.position.x >
+        safeRight
+
+    ) {
+
+        dangerDeath();
+    }
+}
+
+
+/* =========================================================
+   MATI KARENA ZONA MERAH
+========================================================= */
+
+function dangerDeath() {
+
+    if(!running)
+        return;
+
+
+    running = false;
+
+
+    player.visible =
+        true;
+
+
+    endGame(
+
+        "☠️ ZONA BAHAYA!",
+
+        "Kamu keluar dari jalur dan menyentuh zona merah. Level " +
+        level +
+        " harus diulang.",
+
+        "Ulangi Level"
+    );
+}
+
+
+/* =========================================================
+   TERKENA RINTANGAN
+========================================================= */
+
+function hitObstacle(
+    obstacle
+) {
+
+    if(
+
+        hitCooldown > 0 ||
+
+        obstacle.userData.hit
+
+    ) {
+
+        return;
+    }
+
+
+    obstacle.userData.hit =
+        true;
+
+
+    hearts--;
+
+
+    hitCooldown =
+        1.2;
+
+
+    /*
+        Dorong karakter
+        sedikit ke belakang.
+    */
+
+    player.position.z += 2;
+
+
+    updateHUD();
+
+
+    if(
+        hearts <= 0
+    ) {
+
+        endGame(
+
+            "💔 GAME OVER",
+
+            "Tiga hati sudah habis. Level " +
+            level +
+            " harus diulang.",
+
+            "Ulangi Level"
+        );
+    }
+}
+
+
+/* =========================================================
+   PLAYER MOVEMENT
+========================================================= */
+
+function updatePlayer(
+    dt
+) {
+
+    if(!running)
+        return;
+
+
+    const speed =
+
+        PLAYER_SPEED +
+
+        level * 0.35;
+
+
+    let moving =
+        false;
+
+
+    /* KIRI */
+
+    if(
+
+        keys.ArrowLeft ||
+
+        keys.a
+
+    ) {
+
+        player.position.x -=
+            speed * dt;
+
+        moving =
+            true;
+    }
+
+
+    /* KANAN */
+
+    if(
+
+        keys.ArrowRight ||
+
+        keys.d
+
+    ) {
+
+        player.position.x +=
+            speed * dt;
+
+        moving =
+            true;
+    }
+
+
+    /* MAJU */
+
+    if(
+
+        keys.ArrowUp ||
+
+        keys.w
+
+    ) {
+
+        player.position.z -=
+            speed * dt;
+
+        moving =
+            true;
+    }
+
+
+    /* MUNDUR */
+
+    if(
+
+        keys.ArrowDown ||
+
+        keys.s
+
+    ) {
+
+        player.position.z +=
+            speed * dt;
+
+        moving =
+            true;
+    }
+
+
+    /*
+        Cek zona merah
+    */
+
+    checkDangerZone();
+
+
+    /*
+        Gravitasi
+    */
+
+    velocityY -=
+        GRAVITY * dt;
+
+
+    player.position.y +=
+        velocityY * dt;
+
+
+    if(
+
+        player.position.y <= 0
+
+    ) {
+
+        player.position.y =
+            0;
+
+        velocityY =
+            0;
+
+        jumping =
+            false;
+    }
+
+
+    /*
+        Animasi kaki
+    */
+
+    if(
+
+        moving &&
+
+        !jumping
+
+    ) {
+
+        const swing =
+
+            Math.sin(
+
+                performance.now() *
+                0.014
+
+            ) * 0.7;
+
+
+        arms[0].rotation.x =
+            swing;
+
+        arms[1].rotation.x =
+            -swing;
+
+
+        legs[0].rotation.x =
+            -swing;
+
+        legs[1].rotation.x =
+            swing;
+
+    }
+
+    else if(!jumping) {
+
+        arms.forEach(
+
+            arm =>
+            arm.rotation.x = 0
+        );
+
+
+        legs.forEach(
+
+            leg =>
+            leg.rotation.x = 0
+        );
+    }
+
+
+    /*
+        Animasi lompat
+    */
+
+    if(jumping) {
+
+        arms[0].rotation.x =
+            -1.5;
+
+        arms[1].rotation.x =
+            -1.5;
+
+        legs[0].rotation.x =
+            0.5;
+
+        legs[1].rotation.x =
+            -0.5;
+    }
+
+
+    /*
+        Efek terkena
+    */
+
+    if(
+
+        hitCooldown > 0
+
+    ) {
+
+        hitCooldown -= dt;
+
+
+        player.visible =
+
+            Math.floor(
+
+                performance.now() /
+                100
+
+            ) % 2 === 0;
+
+    }
+
+    else {
+
+        player.visible =
+            true;
+    }
+}
+
+
+/* =========================================================
+   UPDATE RINTANGAN
+========================================================= */
+
+function updateObstacles(
+    dt
+) {
+
+    if(!running)
+        return;
+
+
+    for(
+
+        const obstacle of obstacles
+
+    ) {
+
+        const data =
+            obstacle.userData;
+
+
+        /*
+            Bergerak kiri kanan
+        */
+
+        if(
+
+            data.type ===
+            "moving"
+
+        ) {
+
+            obstacle.position.x =
+
+                data.baseX +
+
+                Math.sin(
+
+                    performance.now() *
+                    0.002 +
+
+                    data.phase
+
+                ) *
+
+                (
+                    2 +
+                    level * 0.12
+                );
+        }
+
+
+        /*
+            Berputar
+        */
+
+        if(
+
+            data.type ===
+            "spinner"
+
+        ) {
+
+            obstacle.rotation.z +=
+
+                dt *
+
+                (
+                    1.5 +
+                    level * 0.15
+                );
+        }
+
+
+        /*
+            Tabrakan
+        */
+
+        if(
+
+            !data.hit &&
+
+            intersects(
+
+                player,
+
+                obstacle
+
+            )
+
+        ) {
+
+            hitObstacle(
+                obstacle
+            );
+        }
+    }
+}
+
+
+/* =========================================================
+   FINISH
+========================================================= */
+
+function checkFinish() {
+
+    if(
+
+        !running ||
+
+        !finish
+
+    ) {
+
+        return;
+    }
+
+
+    if(
+
+        player.position.z <=
+        finishZ + 2
+
+    ) {
+
+        running =
+            false;
+
+
+        if(
+            level < 10
+        ) {
+
+            const completed =
+                level;
+
+
+            level++;
+
+
+            hearts =
+                3;
+
+
+            endGame(
+
+                "🎉 LEVEL SELESAI!",
+
+                "Kamu berhasil menyelesaikan level " +
+                completed +
+                "!",
+
+                "Lanjut Level"
+            );
+
+        }
+
+        else {
+
+            endGame(
+
+                "🏆 KAMU MENANG!",
+
+                "Selamat! Kamu berhasil melewati semua 10 level!",
+
+                "Main Lagi"
+            );
+        }
+    }
+}
+
+
+/* =========================================================
+   TIMER
+========================================================= */
+
+function updateTimer() {
+
+    if(!running)
+        return;
+
+
+    const elapsed =
+        Math.floor(
+
+            (
+                performance.now() -
+                levelStart
+
+            ) / 1000
+        );
+
+
+    timeLeft =
+
+        Math.max(
+
+            0,
+
+            60 - elapsed
+        );
+
+
+    document.getElementById(
+        "timer"
+    ).textContent =
+        timeLeft;
+
+
+    if(
+        timeLeft <= 0
+    ) {
+
+        endGame(
+
+            "⏰ WAKTU HABIS",
+
+            "Waktu 60 detik habis. Level " +
+            level +
+            " harus diulang.",
+
+            "Ulangi Level"
+        );
+    }
+}
+
+
+/* =========================================================
+   CAMERA
+========================================================= */
+
+function updateCamera(
+    dt
+) {
+
+    /*
+        Kamera berada
+        di belakang karakter.
+    */
+
+    const target =
+        new THREE.Vector3(
+
+            player.position.x *
+            0.45,
+
+            6.5 +
+            player.position.y *
+            0.3,
+
+            player.position.z +
+            11
+        );
+
+
+    camera.position.lerp(
+
+        target,
+
+        1 -
+        Math.exp(
+            -4 * dt
+        )
+    );
+
+
+    /*
+        Kamera melihat ke depan.
+    */
+
+    camera.lookAt(
+
+        player.position.x,
+
+        1.4 +
+        player.position.y,
+
+        player.position.z -
+        7
+    );
+}
+
+
+/* =========================================================
+   HUD
+========================================================= */
+
+function updateHUD() {
+
+    document.getElementById(
+        "level"
+    ).textContent =
+        level;
+
+
+    document.getElementById(
+        "hearts"
+    ).textContent =
+
+        "❤️".repeat(
+            hearts
+        )
+
+        +
+
+        "🖤".repeat(
+            3 - hearts
+        );
+
+
+    document.getElementById(
+        "timer"
+    ).textContent =
+        timeLeft;
+
+
+    const progress =
+
+        Math.max(
+
+            0,
+
+            Math.min(
+
+                100,
+
+                Math.round(
+
+                    (
+                        5 -
+                        player.position.z
+                    )
+
+                    /
+
+                    (
+                        5 -
+                        finishZ
+                    )
+
+                    * 100
+                )
+            )
+        );
+
+
+    document.getElementById(
+        "percent"
+    ).textContent =
+        progress;
+
+
+    document.getElementById(
+        "progressBar"
+    ).style.width =
+        progress + "%";
+}
+
+
+/* =========================================================
+   MESSAGE
+========================================================= */
+
+function showMessage(
+
+    title,
+
+    text,
+
+    buttonText
+
+) {
+
+    document.getElementById(
+        "msgTitle"
+    ).textContent =
+        title;
+
+
+    document.getElementById(
+        "msgText"
+    ).textContent =
+        text;
+
+
+    document.getElementById(
+        "mainButton"
+    ).textContent =
+        buttonText;
+
+
+    document.getElementById(
+        "message"
+    ).style.display =
+        "flex";
+}
+
+
+/* =========================================================
+   END GAME
+========================================================= */
+
+function endGame(
+
+    title,
+
+    text,
+
+    buttonText
+
+) {
+
+    running =
+        false;
+
+
+    showMessage(
+
+        title,
+
+        text,
+
+        buttonText
+    );
+}
+
+
+/* =========================================================
+   START GAME
+========================================================= */
+
+function startGame() {
+
+    document.getElementById(
+        "message"
+    ).style.display =
+        "none";
+
+
+    if(!started) {
+
+        started =
+            true;
+
+        level =
+            1;
+
+        hearts =
+            3;
+
+        generateLevel();
+    }
+
+    else if(
+
+        level === 10 &&
+
+        document.getElementById(
+            "msgTitle"
+        ).textContent ===
+        "🏆 KAMU MENANG!"
+
+    ) {
+
+        level =
+            1;
+
+        hearts =
+            3;
+
+        generateLevel();
+    }
+
+    else {
+
+        /*
+            Game over / zona bahaya /
+            waktu habis akan mengulang
+            level yang sama.
+        */
+
+        hearts =
+            3;
+
+        generateLevel();
+    }
+
+
+    running =
+        true;
+
+
+    clock.getDelta();
+}
+
+
+/* =========================================================
+   KEYBOARD
+========================================================= */
+
+window.addEventListener(
+
+    "keydown",
+
+    function(event) {
+
+        keys[event.key] =
+            true;
+
+
+        if(
+
+            [
+                "ArrowUp",
+                "ArrowDown",
+                "ArrowLeft",
+                "ArrowRight",
+                " "
+            ].includes(
+                event.key
+            )
+
+        ) {
+
+            event.preventDefault();
+        }
+
+
+        /*
+            Lompat cepat
+        */
+
+        if(
+
+            event.key === " " &&
+
+            running &&
+
+            !jumping
+
+        ) {
+
+            velocityY =
+                JUMP_POWER;
+
+            jumping =
+                true;
+        }
+    }
+);
+
+
+window.addEventListener(
+
+    "keyup",
+
+    function(event) {
+
+        keys[event.key] =
+            false;
+    }
+);
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+function bindButton(
+    id,
+    key
+) {
+
+    const button =
+        document.getElementById(
+            id
+        );
+
+
+    button.addEventListener(
+
+        "pointerdown",
+
+        function(event) {
+
+            event.preventDefault();
+
+
+            keys[key] =
+                true;
+
+
+            if(
+
+                key === " " &&
+
+                running &&
+
+                !jumping
+
+            ) {
+
+                velocityY =
+                    JUMP_POWER;
+
+                jumping =
+                    true;
+            }
+
+
+            button.setPointerCapture(
+                event.pointerId
+            );
+        }
+    );
+
+
+    function release() {
+
+        keys[key] =
+            false;
+    }
+
+
+    button.addEventListener(
+        "pointerup",
+        release
+    );
+
+
+    button.addEventListener(
+        "pointercancel",
+        release
+    );
+
+
+    button.addEventListener(
+        "lostpointercapture",
+        release
+    );
+}
+
+
+bindButton(
+    "left",
+    "ArrowLeft"
+);
+
+
+bindButton(
+    "right",
+    "ArrowRight"
+);
+
+
+bindButton(
+    "up",
+    "ArrowUp"
+);
+
+
+bindButton(
+    "jump",
+    " "
+);
+
+
+/* =========================================================
+   RESIZE
+========================================================= */
+
+window.addEventListener(
+
+    "resize",
+
+    function() {
+
+        camera.aspect =
+
+            window.innerWidth /
+            window.innerHeight;
+
+
+        camera.updateProjectionMatrix();
+
+
+        renderer.setSize(
+
+            window.innerWidth,
+
+            window.innerHeight
+        );
+    }
+);
+
+
+/* =========================================================
+   MULAI
+========================================================= */
+
+player =
+    createPlayer();
+
+
+generateLevel();
+
+
+showMessage(
+
+    "🏃 3D OBSTACLE ADVENTURE",
+
+    "Tetap berada di jalur abu-abu. Jangan menyentuh zona merah!",
+
+    "Mulai Bermain"
+);
+
+
+/* =========================================================
+   GAME LOOP
+========================================================= */
+
+function animate() {
+
+    requestAnimationFrame(
+        animate
+    );
+
+
+    const dt =
+
+        Math.min(
+
+            clock.getDelta(),
+
+            0.04
+        );
+
+
+    updatePlayer(dt);
+
+    updateObstacles(dt);
+
+    updateCamera(dt);
+
+    updateTimer();
+
+    checkFinish();
+
+    updateHUD();
+
+
+    renderer.render(
+
+        scene,
+
+        camera
+    );
+}
+
+
+animate();
+
+</script>
+
+</body>
+</html>
